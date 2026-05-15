@@ -13,8 +13,13 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class WorkshopController {
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ComboBox<String> levelFilter;
     @FXML
     private TableView<Workshop> workshopTable;
     @FXML
@@ -43,13 +48,37 @@ public class WorkshopController {
                         : "Unknown"));
 
         refreshTable();
+        refreshFilters();
+    }
+
+    @FXML
+    private void handleSearch() {
+        String query = normalize(searchField.getText());
+        String level = levelFilter.getValue();
+        List<Workshop> filtered = workshopService.getAllWorkshops().stream()
+                .filter(workshop -> query.isBlank()
+                        || contains(workshop.getTitle(), query)
+                        || contains(workshop.getLevel(), query)
+                        || contains(instructorName(workshop), query)
+                        || contains(workshop.getLocation(), query))
+                .filter(workshop -> level == null || level.equals(workshop.getLevel()))
+                .toList();
+        workshopTable.setItems(FXCollections.observableArrayList(filtered));
+    }
+
+    @FXML
+    private void handleReset() {
+        searchField.clear();
+        levelFilter.setValue(null);
+        refreshTable();
+        refreshFilters();
     }
 
     @FXML
     private void handleAddWorkshop() {
         showWorkshopDialog(null).ifPresent(workshop -> {
             workshopService.createWorkshop(workshop);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -62,7 +91,7 @@ public class WorkshopController {
         }
         showWorkshopDialog(selected).ifPresent(workshop -> {
             workshopService.updateWorkshop(workshop);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -75,12 +104,48 @@ public class WorkshopController {
         }
         if (confirm("Delete workshop", "Delete " + selected.getTitle() + "?")) {
             workshopService.deleteWorkshop(selected.getTitle());
-            refreshTable();
+            refreshVisibleData();
         }
     }
 
     private void refreshTable() {
         workshopTable.setItems(FXCollections.observableArrayList(workshopService.getAllWorkshops()));
+    }
+
+    private void refreshFilters() {
+        levelFilter.setItems(FXCollections.observableArrayList(workshopService.getAllWorkshops().stream()
+                .map(Workshop::getLevel)
+                .filter(level -> level != null && !level.isBlank())
+                .distinct()
+                .sorted()
+                .toList()));
+    }
+
+    private String instructorName(Workshop workshop) {
+        return workshop.getInstructor() == null ? "" : workshop.getInstructor().getName();
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && value.toLowerCase().contains(query);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private void refreshVisibleData() {
+        refreshFilters();
+        if (hasActiveFilters()) {
+            handleSearch();
+        } else {
+            refreshTable();
+        }
+        workshopTable.refresh();
+    }
+
+    private boolean hasActiveFilters() {
+        return (searchField.getText() != null && !searchField.getText().isBlank())
+                || levelFilter.getValue() != null;
     }
 
     private java.util.Optional<Workshop> showWorkshopDialog(Workshop existing) {

@@ -16,12 +16,38 @@ import java.sql.SQLException;
  * initialization.
  */
 public class ServiceProvider {
-    private static final boolean jdbcAvailable = requireJdbcAvailability();
-    private static final ArtistService artistService = new JdbcArtistService(new JdbcArtistDao());
-    private static final ArtworkService artworkService = new JdbcArtworkService(new JdbcArtworkDao());
-    private static final GalleryService galleryService = new JdbcGalleryService(new JdbcGalleryDao());
-    private static final WorkshopService workshopService = new JdbcWorkshopService(new JdbcWorkshopDao());
-    private static final CommunityService communityService = new JdbcCommunityService(new JdbcCommunityMemberDao());
+    private static final ArtistService artistService;
+    private static final ArtworkService artworkService;
+    private static final GalleryService galleryService;
+    private static final WorkshopService workshopService;
+    private static final CommunityService communityService;
+
+    static {
+        if (isJdbcAvailable()) {
+            artistService = new JdbcArtistService(new JdbcArtistDao());
+            artworkService = new JdbcArtworkService(new JdbcArtworkDao());
+            galleryService = new JdbcGalleryService(new JdbcGalleryDao());
+            workshopService = new JdbcWorkshopService(new JdbcWorkshopDao());
+            communityService = new JdbcCommunityService(new JdbcCommunityMemberDao());
+        } else {
+            InMemoryArtistService inMemoryArtistService = new InMemoryArtistService();
+            InMemoryArtworkService inMemoryArtworkService = new InMemoryArtworkService();
+            InMemoryGalleryService inMemoryGalleryService = new InMemoryGalleryService();
+            InMemoryWorkshopService inMemoryWorkshopService = new InMemoryWorkshopService();
+            InMemoryCommunityService inMemoryCommunityService = new InMemoryCommunityService();
+
+            inMemoryArtworkService.initData(inMemoryArtistService);
+            inMemoryGalleryService.initData(inMemoryArtworkService);
+            inMemoryWorkshopService.initData(inMemoryArtistService);
+            inMemoryCommunityService.initData(inMemoryArtworkService);
+
+            artistService = inMemoryArtistService;
+            artworkService = inMemoryArtworkService;
+            galleryService = inMemoryGalleryService;
+            workshopService = inMemoryWorkshopService;
+            communityService = inMemoryCommunityService;
+        }
+    }
 
     public static ArtistService getArtistService() {
         return artistService;
@@ -43,17 +69,11 @@ public class ServiceProvider {
         return communityService;
     }
 
-    private static boolean requireJdbcAvailability() {
+    private static boolean isJdbcAvailable() {
         try (Connection ignored = ConnectionManager.getConnection()) {
-            if (!schemaLooksReady(ignored)) {
-                throw new IllegalStateException(
-                        "JDBC is enabled but the ArtConnect schema is incomplete or inaccessible.");
-            }
-            return true;
+            return schemaLooksReady(ignored);
         } catch (SQLException e) {
-            throw new IllegalStateException(
-                    "Unable to connect to MySQL. Check DatabaseConfig and verify that the artconnect_pro database is running.",
-                    e);
+            return false;
         }
     }
 

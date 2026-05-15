@@ -12,8 +12,13 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import java.util.List;
 
 public class ArtworkController {
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ComboBox<String> typeFilter;
     @FXML
     private TableView<Artwork> artworkTable;
     @FXML
@@ -41,13 +46,36 @@ public class ArtworkController {
                 cellData.getValue().getArtist() != null ? cellData.getValue().getArtist().getName() : "Unknown"));
 
         refreshTable();
+        refreshFilters();
+    }
+
+    @FXML
+    private void handleSearch() {
+        String query = normalize(searchField.getText());
+        String type = typeFilter.getValue();
+        List<Artwork> filtered = artworkService.getAllArtworks().stream()
+                .filter(artwork -> query.isBlank()
+                        || contains(artwork.getTitle(), query)
+                        || contains(artwork.getType(), query)
+                        || contains(artistName(artwork), query))
+                .filter(artwork -> type == null || type.equals(artwork.getType()))
+                .toList();
+        artworkTable.setItems(FXCollections.observableArrayList(filtered));
+    }
+
+    @FXML
+    private void handleReset() {
+        searchField.clear();
+        typeFilter.setValue(null);
+        refreshTable();
+        refreshFilters();
     }
 
     @FXML
     private void handleAddArtwork() {
         showArtworkDialog(null).ifPresent(artwork -> {
             artworkService.createArtwork(artwork);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -60,7 +88,7 @@ public class ArtworkController {
         }
         showArtworkDialog(selected).ifPresent(artwork -> {
             artworkService.updateArtwork(artwork);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -73,12 +101,48 @@ public class ArtworkController {
         }
         if (confirm("Delete artwork", "Delete " + selected.getTitle() + "?")) {
             artworkService.deleteArtwork(selected.getTitle());
-            refreshTable();
+            refreshVisibleData();
         }
     }
 
     private void refreshTable() {
         artworkTable.setItems(FXCollections.observableArrayList(artworkService.getAllArtworks()));
+    }
+
+    private void refreshFilters() {
+        typeFilter.setItems(FXCollections.observableArrayList(artworkService.getAllArtworks().stream()
+                .map(Artwork::getType)
+                .filter(type -> type != null && !type.isBlank())
+                .distinct()
+                .sorted()
+                .toList()));
+    }
+
+    private String artistName(Artwork artwork) {
+        return artwork.getArtist() == null ? "" : artwork.getArtist().getName();
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && value.toLowerCase().contains(query);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private void refreshVisibleData() {
+        refreshFilters();
+        if (hasActiveFilters()) {
+            handleSearch();
+        } else {
+            refreshTable();
+        }
+        artworkTable.refresh();
+    }
+
+    private boolean hasActiveFilters() {
+        return (searchField.getText() != null && !searchField.getText().isBlank())
+                || typeFilter.getValue() != null;
     }
 
     private java.util.Optional<Artwork> showArtworkDialog(Artwork existing) {

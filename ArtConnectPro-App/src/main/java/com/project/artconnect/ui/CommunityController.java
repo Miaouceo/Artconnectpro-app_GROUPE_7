@@ -9,8 +9,13 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import java.util.List;
 
 public class CommunityController {
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ComboBox<String> cityFilter;
     @FXML
     private TableView<CommunityMember> memberTable;
     @FXML
@@ -29,13 +34,37 @@ public class CommunityController {
         cityColumn.setCellValueFactory(new PropertyValueFactory<>("city"));
 
         refreshTable();
+        refreshFilters();
+    }
+
+    @FXML
+    private void handleSearch() {
+        String query = normalize(searchField.getText());
+        String city = cityFilter.getValue();
+        List<CommunityMember> filtered = communityService.getAllMembers().stream()
+                .filter(member -> query.isBlank()
+                        || contains(member.getName(), query)
+                        || contains(member.getEmail(), query)
+                        || contains(member.getCity(), query)
+                        || contains(member.getMembershipType(), query))
+                .filter(member -> city == null || city.equals(member.getCity()))
+                .toList();
+        memberTable.setItems(FXCollections.observableArrayList(filtered));
+    }
+
+    @FXML
+    private void handleReset() {
+        searchField.clear();
+        cityFilter.setValue(null);
+        refreshTable();
+        refreshFilters();
     }
 
     @FXML
     private void handleAddMember() {
         showMemberDialog(null).ifPresent(member -> {
             communityService.createMember(member);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -48,7 +77,7 @@ public class CommunityController {
         }
         showMemberDialog(selected).ifPresent(member -> {
             communityService.updateMember(member);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -61,12 +90,44 @@ public class CommunityController {
         }
         if (confirm("Delete member", "Delete " + selected.getName() + "?")) {
             communityService.deleteMember(selected.getEmail());
-            refreshTable();
+            refreshVisibleData();
         }
     }
 
     private void refreshTable() {
         memberTable.setItems(FXCollections.observableArrayList(communityService.getAllMembers()));
+    }
+
+    private void refreshFilters() {
+        cityFilter.setItems(FXCollections.observableArrayList(communityService.getAllMembers().stream()
+                .map(CommunityMember::getCity)
+                .filter(city -> city != null && !city.isBlank())
+                .distinct()
+                .sorted()
+                .toList()));
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && value.toLowerCase().contains(query);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private void refreshVisibleData() {
+        refreshFilters();
+        if (hasActiveFilters()) {
+            handleSearch();
+        } else {
+            refreshTable();
+        }
+        memberTable.refresh();
+    }
+
+    private boolean hasActiveFilters() {
+        return (searchField.getText() != null && !searchField.getText().isBlank())
+                || cityFilter.getValue() != null;
     }
 
     private java.util.Optional<CommunityMember> showMemberDialog(CommunityMember existing) {

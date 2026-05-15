@@ -11,6 +11,10 @@ import javafx.scene.layout.GridPane;
 
 public class GalleryController {
     @FXML
+    private TextField searchField;
+    @FXML
+    private ComboBox<String> ratingFilter;
+    @FXML
     private ListView<Gallery> galleryList;
 
     private final GalleryService galleryService = ServiceProvider.getGalleryService();
@@ -18,6 +22,7 @@ public class GalleryController {
     @FXML
     public void initialize() {
         refreshList();
+        refreshFilters();
 
         // Custom cell factory to show more info
         galleryList.setCellFactory(lv -> new javafx.scene.control.ListCell<>() {
@@ -34,10 +39,31 @@ public class GalleryController {
     }
 
     @FXML
+    private void handleSearch() {
+        String query = normalize(searchField.getText());
+        String rating = ratingFilter.getValue();
+        galleryList.setItems(FXCollections.observableArrayList(galleryService.getAllGalleries().stream()
+                .filter(gallery -> query.isBlank()
+                        || contains(gallery.getName(), query)
+                        || contains(gallery.getAddress(), query)
+                        || contains(gallery.getOwnerName(), query))
+                .filter(gallery -> rating == null || matchesRating(gallery, rating))
+                .toList()));
+    }
+
+    @FXML
+    private void handleReset() {
+        searchField.clear();
+        ratingFilter.setValue(null);
+        refreshList();
+        refreshFilters();
+    }
+
+    @FXML
     private void handleAddGallery() {
         showGalleryDialog(null).ifPresent(gallery -> {
             galleryService.createGallery(gallery);
-            refreshList();
+            refreshVisibleData();
         });
     }
 
@@ -50,7 +76,7 @@ public class GalleryController {
         }
         showGalleryDialog(selected).ifPresent(gallery -> {
             galleryService.updateGallery(gallery);
-            refreshList();
+            refreshVisibleData();
         });
     }
 
@@ -63,12 +89,21 @@ public class GalleryController {
         }
         if (confirm("Delete gallery", "Delete " + selected.getName() + "?")) {
             galleryService.deleteGallery(selected.getName());
-            refreshList();
+            refreshVisibleData();
         }
     }
 
     private void refreshList() {
         galleryList.setItems(FXCollections.observableArrayList(galleryService.getAllGalleries()));
+    }
+
+    private void refreshFilters() {
+        ratingFilter.setItems(FXCollections.observableArrayList("4.5+", "4.0+", "3.0+"));
+    }
+
+    private boolean matchesRating(Gallery gallery, String rating) {
+        double minimum = Double.parseDouble(rating.replace("+", ""));
+        return gallery.getRating() >= minimum;
     }
 
     private java.util.Optional<Gallery> showGalleryDialog(Gallery existing) {
@@ -119,5 +154,28 @@ public class GalleryController {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && value.toLowerCase().contains(query);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private void refreshVisibleData() {
+        refreshFilters();
+        if (hasActiveFilters()) {
+            handleSearch();
+        } else {
+            refreshList();
+        }
+        galleryList.refresh();
+    }
+
+    private boolean hasActiveFilters() {
+        return (searchField.getText() != null && !searchField.getText().isBlank())
+                || ratingFilter.getValue() != null;
     }
 }

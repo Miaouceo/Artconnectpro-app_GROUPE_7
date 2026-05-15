@@ -9,6 +9,12 @@
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
     </padding>
     <HBox spacing="10.0" alignment="CENTER_LEFT">
+        <TextField fx:id="searchField" promptText="Search workshops..." HBox.hgrow="ALWAYS" />
+        <ComboBox fx:id="levelFilter" promptText="Filter by Level" />
+        <Button text="Search" onAction="#handleSearch" />
+        <Button text="Reset" onAction="#handleReset" />
+    </HBox>
+    <HBox spacing="10.0" alignment="CENTER_LEFT">
         <Button text="Add" onAction="#handleAddWorkshop" />
         <Button text="Edit" onAction="#handleEditWorkshop" />
         <Button text="Delete" onAction="#handleDeleteWorkshop" />

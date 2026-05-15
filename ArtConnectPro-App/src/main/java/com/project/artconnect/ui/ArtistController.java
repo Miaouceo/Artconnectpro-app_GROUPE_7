@@ -66,7 +66,7 @@ public class ArtistController {
     private void handleAddArtist() {
         showArtistDialog(null).ifPresent(artist -> {
             artistService.createArtist(artist);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -79,7 +79,7 @@ public class ArtistController {
         }
         showArtistDialog(selected).ifPresent(artist -> {
             artistService.updateArtist(artist);
-            refreshTable();
+            refreshVisibleData();
         });
     }
 
@@ -92,7 +92,7 @@ public class ArtistController {
         }
         if (confirm("Delete artist", "Delete " + selected.getName() + "?")) {
             artistService.deleteArtist(selected.getName());
-            refreshTable();
+            refreshVisibleData();
         }
     }
 
@@ -159,5 +159,20 @@ public class ArtistController {
 
     private String defaultString(String value) {
         return value == null ? "" : value;
+    }
+
+    private void refreshVisibleData() {
+        disciplineFilter.setItems(FXCollections.observableArrayList(artistService.getAllDisciplines()));
+        if (hasActiveFilters()) {
+            handleSearch();
+        } else {
+            refreshTable();
+        }
+        artistTable.refresh();
+    }
+
+    private boolean hasActiveFilters() {
+        return (searchField.getText() != null && !searchField.getText().isBlank())
+                || disciplineFilter.getValue() != null;
     }
 }
