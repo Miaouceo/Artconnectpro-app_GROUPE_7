@@ -15,9 +15,9 @@
         <Button text="Reset" onAction="#handleReset" />
     </HBox>
     <HBox spacing="10.0" alignment="CENTER_LEFT">
-        <Button text="Add" onAction="#handleAddWorkshop" />
-        <Button text="Edit" onAction="#handleEditWorkshop" />
-        <Button text="Delete" onAction="#handleDeleteWorkshop" />
+        <Button fx:id="addWorkshopButton" text="Add" onAction="#handleAddWorkshop" />
+        <Button fx:id="editWorkshopButton" text="Edit" onAction="#handleEditWorkshop" />
+        <Button fx:id="deleteWorkshopButton" text="Delete" onAction="#handleDeleteWorkshop" />
     </HBox>
     <TableView fx:id="workshopTable" VBox.vgrow="ALWAYS">
         <columns>

@@ -55,3 +55,15 @@ graph TD
 2. Search for an artist by name or filter by discipline in the Artists Tab.
 3. View the "Discover" tab to see featured content dynamically generated.
 4. Once you implement JDBC, swap the `ServiceProvider` to use your `JdbcArtistDao` and verify data is fetched from MySQL.
+
+## SQL Setup
+Import the SQL scripts in this order:
+
+```sql
+SOURCE sql/01_schema.sql;
+SOURCE sql/02_seed.sql;
+SOURCE sql/04_advanced_sql.sql;
+SOURCE sql/03_test_queries.sql;
+```
+
+`04_advanced_sql.sql` contains the advanced database features required by the report: 6 views, 8 explicit indexes, 6 triggers, 2 functions, and 4 transactional stored procedures using `START TRANSACTION`, `COMMIT`, `ROLLBACK`, and `FOR UPDATE`.

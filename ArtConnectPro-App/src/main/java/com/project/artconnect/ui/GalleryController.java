@@ -16,6 +16,12 @@ public class GalleryController {
     private ComboBox<String> ratingFilter;
     @FXML
     private ListView<Gallery> galleryList;
+    @FXML
+    private Button addGalleryButton;
+    @FXML
+    private Button editGalleryButton;
+    @FXML
+    private Button deleteGalleryButton;
 
     private final GalleryService galleryService = ServiceProvider.getGalleryService();
 
@@ -36,6 +42,8 @@ public class GalleryController {
                 }
             }
         });
+        UserSession.activeRoleProperty().addListener((obs, oldRole, newRole) -> applyRole(newRole));
+        applyRole(UserSession.getActiveRole());
     }
 
     @FXML
@@ -61,6 +69,10 @@ public class GalleryController {
 
     @FXML
     private void handleAddGallery() {
+        if (!canManageGalleries()) {
+            showWarning("Only admins can manage galleries.");
+            return;
+        }
         showGalleryDialog(null).ifPresent(gallery -> {
             galleryService.createGallery(gallery);
             refreshVisibleData();
@@ -69,6 +81,10 @@ public class GalleryController {
 
     @FXML
     private void handleEditGallery() {
+        if (!canManageGalleries()) {
+            showWarning("Only admins can manage galleries.");
+            return;
+        }
         Gallery selected = galleryList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select a gallery to edit.");
@@ -82,6 +98,10 @@ public class GalleryController {
 
     @FXML
     private void handleDeleteGallery() {
+        if (!canManageGalleries()) {
+            showWarning("Only admins can manage galleries.");
+            return;
+        }
         Gallery selected = galleryList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select a gallery to delete.");
@@ -177,5 +197,16 @@ public class GalleryController {
     private boolean hasActiveFilters() {
         return (searchField.getText() != null && !searchField.getText().isBlank())
                 || ratingFilter.getValue() != null;
+    }
+
+    private void applyRole(UserRole role) {
+        boolean canManage = role.canManageCatalog();
+        addGalleryButton.setDisable(!canManage);
+        editGalleryButton.setDisable(!canManage);
+        deleteGalleryButton.setDisable(!canManage);
+    }
+
+    private boolean canManageGalleries() {
+        return UserSession.getActiveRole().canManageCatalog();
     }
 }

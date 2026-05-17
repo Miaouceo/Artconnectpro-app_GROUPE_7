@@ -13,6 +13,17 @@
             <MenuItem text="About"/>
         </Menu>
     </MenuBar>
+
+    <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #f8fafc; -fx-border-color: #dbe4ee; -fx-border-width: 0 0 1 0;">
+        <padding>
+            <Insets bottom="10.0" left="14.0" right="14.0" top="10.0"/>
+        </padding>
+        <Label text="Role actif"/>
+        <ComboBox fx:id="roleSelector" prefWidth="160.0"/>
+        <Label fx:id="roleDescriptionLabel" style="-fx-text-fill: #24324f; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label text="Visiteur: lecture seule | Membre: reservations, avis, profil | Artiste: oeuvres + ateliers | Admin: acces complet"/>
+    </HBox>
     
     <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
         <Tab text="Discover">
@@ -32,6 +43,9 @@
         </Tab>
         <Tab text="Workshops">
             <fx:include source="WorkshopsTab.fxml"/>
+        </Tab>
+        <Tab text="Espace membre">
+            <fx:include source="MemberSpaceTab.fxml"/>
         </Tab>
         <Tab text="Community">
             <fx:include source="CommunityTab.fxml"/>

@@ -15,9 +15,9 @@
         <Button text="Reset" onAction="#handleReset" />
     </HBox>
     <HBox spacing="10.0" alignment="CENTER_LEFT">
-        <Button text="Add" onAction="#handleAddGallery" />
-        <Button text="Edit" onAction="#handleEditGallery" />
-        <Button text="Delete" onAction="#handleDeleteGallery" />
+        <Button fx:id="addGalleryButton" text="Add" onAction="#handleAddGallery" />
+        <Button fx:id="editGalleryButton" text="Edit" onAction="#handleEditGallery" />
+        <Button fx:id="deleteGalleryButton" text="Delete" onAction="#handleDeleteGallery" />
     </HBox>
     <ListView fx:id="galleryList" VBox.vgrow="ALWAYS" />
 </VBox>

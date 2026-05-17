@@ -31,6 +31,12 @@ public class ArtworkController {
     private TableColumn<Artwork, String> statusColumn;
     @FXML
     private TableColumn<Artwork, String> artistColumn;
+    @FXML
+    private Button addArtworkButton;
+    @FXML
+    private Button editArtworkButton;
+    @FXML
+    private Button deleteArtworkButton;
 
     private final ArtworkService artworkService = ServiceProvider.getArtworkService();
     private final ArtistService artistService = ServiceProvider.getArtistService();
@@ -47,6 +53,8 @@ public class ArtworkController {
 
         refreshTable();
         refreshFilters();
+        UserSession.activeRoleProperty().addListener((obs, oldRole, newRole) -> applyRole(newRole));
+        applyRole(UserSession.getActiveRole());
     }
 
     @FXML
@@ -73,6 +81,10 @@ public class ArtworkController {
 
     @FXML
     private void handleAddArtwork() {
+        if (!canManageArtworks()) {
+            showWarning("Only artists and admins can manage artworks.");
+            return;
+        }
         showArtworkDialog(null).ifPresent(artwork -> {
             artworkService.createArtwork(artwork);
             refreshVisibleData();
@@ -81,6 +93,10 @@ public class ArtworkController {
 
     @FXML
     private void handleEditArtwork() {
+        if (!canManageArtworks()) {
+            showWarning("Only artists and admins can manage artworks.");
+            return;
+        }
         Artwork selected = artworkTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select an artwork to edit.");
@@ -94,6 +110,10 @@ public class ArtworkController {
 
     @FXML
     private void handleDeleteArtwork() {
+        if (!canManageArtworks()) {
+            showWarning("Only artists and admins can manage artworks.");
+            return;
+        }
         Artwork selected = artworkTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select an artwork to delete.");
@@ -203,5 +223,16 @@ public class ArtworkController {
 
     private void showWarning(String message) {
         new Alert(Alert.AlertType.WARNING, message, ButtonType.OK).showAndWait();
+    }
+
+    private void applyRole(UserRole role) {
+        boolean canManage = role.canManageArtworks();
+        addArtworkButton.setDisable(!canManage);
+        editArtworkButton.setDisable(!canManage);
+        deleteArtworkButton.setDisable(!canManage);
+    }
+
+    private boolean canManageArtworks() {
+        return UserSession.getActiveRole().canManageArtworks();
     }
 }

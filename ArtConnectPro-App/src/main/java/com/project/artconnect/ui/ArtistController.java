@@ -28,6 +28,12 @@ public class ArtistController {
     private TableColumn<Artist, String> emailColumn;
     @FXML
     private TableColumn<Artist, Integer> yearColumn;
+    @FXML
+    private Button addArtistButton;
+    @FXML
+    private Button editArtistButton;
+    @FXML
+    private Button deleteArtistButton;
 
     private final ArtistService artistService = ServiceProvider.getArtistService();
 
@@ -40,6 +46,8 @@ public class ArtistController {
 
         disciplineFilter.setItems(FXCollections.observableArrayList(artistService.getAllDisciplines()));
         refreshTable();
+        UserSession.activeRoleProperty().addListener((obs, oldRole, newRole) -> applyRole(newRole));
+        applyRole(UserSession.getActiveRole());
     }
 
     @FXML
@@ -64,6 +72,10 @@ public class ArtistController {
 
     @FXML
     private void handleAddArtist() {
+        if (!canManageArtists()) {
+            showWarning("Only admins can manage artists.");
+            return;
+        }
         showArtistDialog(null).ifPresent(artist -> {
             artistService.createArtist(artist);
             refreshVisibleData();
@@ -72,6 +84,10 @@ public class ArtistController {
 
     @FXML
     private void handleEditArtist() {
+        if (!canManageArtists()) {
+            showWarning("Only admins can manage artists.");
+            return;
+        }
         Artist selected = artistTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select an artist to edit.");
@@ -85,6 +101,10 @@ public class ArtistController {
 
     @FXML
     private void handleDeleteArtist() {
+        if (!canManageArtists()) {
+            showWarning("Only admins can manage artists.");
+            return;
+        }
         Artist selected = artistTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select an artist to delete.");
@@ -174,5 +194,16 @@ public class ArtistController {
     private boolean hasActiveFilters() {
         return (searchField.getText() != null && !searchField.getText().isBlank())
                 || disciplineFilter.getValue() != null;
+    }
+
+    private void applyRole(UserRole role) {
+        boolean canManage = role.canManageCatalog();
+        addArtistButton.setDisable(!canManage);
+        editArtistButton.setDisable(!canManage);
+        deleteArtistButton.setDisable(!canManage);
+    }
+
+    private boolean canManageArtists() {
+        return UserSession.getActiveRole().canManageCatalog();
     }
 }

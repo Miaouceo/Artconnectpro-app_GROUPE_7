@@ -24,6 +24,12 @@ public class CommunityController {
     private TableColumn<CommunityMember, String> emailColumn;
     @FXML
     private TableColumn<CommunityMember, String> cityColumn;
+    @FXML
+    private Button addMemberButton;
+    @FXML
+    private Button editMemberButton;
+    @FXML
+    private Button deleteMemberButton;
 
     private final CommunityService communityService = ServiceProvider.getCommunityService();
 
@@ -35,6 +41,8 @@ public class CommunityController {
 
         refreshTable();
         refreshFilters();
+        UserSession.activeRoleProperty().addListener((obs, oldRole, newRole) -> applyRole(newRole));
+        applyRole(UserSession.getActiveRole());
     }
 
     @FXML
@@ -62,6 +70,10 @@ public class CommunityController {
 
     @FXML
     private void handleAddMember() {
+        if (!canManageCommunity()) {
+            showWarning("Only admins can manage community members.");
+            return;
+        }
         showMemberDialog(null).ifPresent(member -> {
             communityService.createMember(member);
             refreshVisibleData();
@@ -70,6 +82,10 @@ public class CommunityController {
 
     @FXML
     private void handleEditMember() {
+        if (!canManageCommunity()) {
+            showWarning("Only admins can manage community members.");
+            return;
+        }
         CommunityMember selected = memberTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select a member to edit.");
@@ -83,6 +99,10 @@ public class CommunityController {
 
     @FXML
     private void handleDeleteMember() {
+        if (!canManageCommunity()) {
+            showWarning("Only admins can manage community members.");
+            return;
+        }
         CommunityMember selected = memberTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select a member to delete.");
@@ -174,5 +194,16 @@ public class CommunityController {
 
     private void showWarning(String message) {
         new Alert(Alert.AlertType.WARNING, message, ButtonType.OK).showAndWait();
+    }
+
+    private void applyRole(UserRole role) {
+        boolean canManage = role.canManageCommunity();
+        addMemberButton.setDisable(!canManage);
+        editMemberButton.setDisable(!canManage);
+        deleteMemberButton.setDisable(!canManage);
+    }
+
+    private boolean canManageCommunity() {
+        return UserSession.getActiveRole().canManageCommunity();
     }
 }

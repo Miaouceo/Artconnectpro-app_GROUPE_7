@@ -32,6 +32,12 @@ public class WorkshopController {
     private TableColumn<Workshop, Double> priceColumn;
     @FXML
     private TableColumn<Workshop, String> levelColumn;
+    @FXML
+    private Button addWorkshopButton;
+    @FXML
+    private Button editWorkshopButton;
+    @FXML
+    private Button deleteWorkshopButton;
 
     private final WorkshopService workshopService = ServiceProvider.getWorkshopService();
     private final ArtistService artistService = ServiceProvider.getArtistService();
@@ -49,6 +55,8 @@ public class WorkshopController {
 
         refreshTable();
         refreshFilters();
+        UserSession.activeRoleProperty().addListener((obs, oldRole, newRole) -> applyRole(newRole));
+        applyRole(UserSession.getActiveRole());
     }
 
     @FXML
@@ -76,6 +84,10 @@ public class WorkshopController {
 
     @FXML
     private void handleAddWorkshop() {
+        if (!canManageWorkshops()) {
+            showWarning("Only artists and admins can manage workshops.");
+            return;
+        }
         showWorkshopDialog(null).ifPresent(workshop -> {
             workshopService.createWorkshop(workshop);
             refreshVisibleData();
@@ -84,6 +96,10 @@ public class WorkshopController {
 
     @FXML
     private void handleEditWorkshop() {
+        if (!canManageWorkshops()) {
+            showWarning("Only artists and admins can manage workshops.");
+            return;
+        }
         Workshop selected = workshopTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select a workshop to edit.");
@@ -97,6 +113,10 @@ public class WorkshopController {
 
     @FXML
     private void handleDeleteWorkshop() {
+        if (!canManageWorkshops()) {
+            showWarning("Only artists and admins can manage workshops.");
+            return;
+        }
         Workshop selected = workshopTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Select a workshop to delete.");
@@ -201,5 +221,16 @@ public class WorkshopController {
 
     private void showWarning(String message) {
         new Alert(Alert.AlertType.WARNING, message, ButtonType.OK).showAndWait();
+    }
+
+    private void applyRole(UserRole role) {
+        boolean canManage = role.canManageWorkshops();
+        addWorkshopButton.setDisable(!canManage);
+        editWorkshopButton.setDisable(!canManage);
+        deleteWorkshopButton.setDisable(!canManage);
+    }
+
+    private boolean canManageWorkshops() {
+        return UserSession.getActiveRole().canManageWorkshops();
     }
 }

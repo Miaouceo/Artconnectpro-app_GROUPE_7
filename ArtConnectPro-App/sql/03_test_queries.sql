@@ -74,3 +74,28 @@ ORDER BY r.review_date;
 SELECT name
 FROM artist
 WHERE name LIKE '%TEST%' OR name LIKE '%Monet%';
+
+-- 13. Verifier les vues avancees
+SELECT *
+FROM v_artist_portfolio_summary
+ORDER BY artist_name;
+
+SELECT *
+FROM v_workshop_booking_status
+ORDER BY workshop_datetime;
+
+SELECT *
+FROM v_member_activity
+ORDER BY member_name;
+
+-- 14. Verifier les fonctions avancees
+SELECT
+    fn_member_booking_count(1) AS alice_active_bookings,
+    fn_artwork_average_rating(1) AS mona_lisa_average_rating;
+
+-- 15. Verifier les procedures transactionnelles
+-- Ces appels modifient les donnees de demonstration. A lancer seulement pour tester les transactions.
+-- CALL sp_book_workshop(1, 2, 'PAID');
+-- CALL sp_cancel_booking(2);
+-- CALL sp_sell_artwork(4, 125000.00);
+-- CALL sp_move_artwork_between_exhibitions(3, 3, 1);
